@@ -50,10 +50,11 @@ def find_message_handler_module(msg_type: int) -> str:
         return "apps.management.set_u2f_counter"
     elif msg_type == MessageType.GetNextU2FCounter:
         return "apps.management.get_next_u2f_counter"
-    elif msg_type == MessageType.SdProtect:
-        return "apps.management.sd_protect"
     elif msg_type == MessageType.ChangeWipeCode:
         return "apps.management.change_wipe_code"
+
+    elif utils.MODEL == "T" and msg_type == MessageType.SdProtect:
+        return "apps.management.sd_protect"
 
     # bitcoin
     elif msg_type == MessageType.AuthorizeCoinJoin:
