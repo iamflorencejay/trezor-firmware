@@ -1,4 +1,4 @@
-from trezorutils import protobuf_type_for_name
+from trezor import protobuf
 
 from trezor.enums import MessageType
 
@@ -13,7 +13,7 @@ if False:
 
 def __getattr__(name):
     try:
-        return protobuf_type_for_name(name)
+        return protobuf.type_for_name(name)
     except ValueError:
         # TODO: Import all enums from `trezor.enums` directly and remove this.
         return __import__("trezor.enums.%s" % name, None, None, (name,), 0)

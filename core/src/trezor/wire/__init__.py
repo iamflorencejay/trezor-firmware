@@ -35,16 +35,9 @@ reads the message's header. When the message type is known the first handler is 
 
 """
 
-from trezorutils import (
-    protobuf_decode,
-    protobuf_encode,
-    protobuf_len,
-    protobuf_type_for_wire,
-)
-
 import protobuf
 from storage.cache import InvalidSessionError
-from trezor import log, loop, messages, utils, workflow
+from trezor import log, loop, messages, protobuf, utils, workflow
 from trezor.messages import Failure, FailureType
 from trezor.wire import codec_v1
 from trezor.wire.errors import ActionCancelled, DataError, Error
@@ -79,17 +72,19 @@ def setup(iface: WireInterface, is_debug_session: bool = False) -> None:
 
 
 if False:
-    from typing import Protocol
+    from typing import Protocol, TypeVar
+
+    LoadedMessageType = TypeVar("LoadedMessageType", bound=protobuf.MessageType)
 
     class GenericContext(Protocol):
         async def call(
             self,
             msg: protobuf.MessageType,
-            expected_type: type[protobuf.LoadedMessageType],
+            expected_type: type[protobuf.MessageType],
         ) -> Any:
             ...
 
-        async def read(self, expected_type: type[protobuf.LoadedMessageType]) -> Any:
+        async def read(self, expected_type: type[protobuf.MessageType]) -> Any:
             ...
 
         async def write(self, msg: protobuf.MessageType) -> None:
@@ -102,10 +97,10 @@ if False:
 
 def _wrap_protobuf_load(
     reader: protobuf.Reader,
-    expected_type: type[protobuf.LoadedMessageType],
-) -> protobuf.LoadedMessageType:
+    expected_type: type[LoadedMessageType],
+) -> LoadedMessageType:
     try:
-        return protobuf_decode(reader.buffer, expected_type, experimental_enabled)
+        return protobuf.decode(reader.buffer, expected_type, experimental_enabled)
     except Exception as e:
         if __debug__:
             log.exception(__name__, e)
@@ -147,8 +142,8 @@ class Context:
     async def call(
         self,
         msg: protobuf.MessageType,
-        expected_type: type[protobuf.LoadedMessageType],
-    ) -> protobuf.LoadedMessageType:
+        expected_type: type[LoadedMessageType],
+    ) -> LoadedMessageType:
         await self.write(msg)
         del msg
         return await self.read(expected_type)
@@ -163,10 +158,7 @@ class Context:
     def read_from_wire(self) -> codec_v1.Message:
         return codec_v1.read_message(self.iface, self.buffer)
 
-    async def read(
-        self,
-        expected_type: type[protobuf.LoadedMessageType],
-    ) -> protobuf.LoadedMessageType:
+    async def read(self, expected_type: type[LoadedMessageType]) -> LoadedMessageType:
         if __debug__:
             log.debug(
                 __name__,
@@ -219,7 +211,7 @@ class Context:
             raise UnexpectedMessageError(msg)
 
         # find the protobuf type
-        exptype = protobuf_type_for_wire(msg.type)
+        exptype = protobuf.type_for_wire(msg.type)
 
         if __debug__:
             log.debug(
@@ -237,9 +229,7 @@ class Context:
                 __name__, "%s:%x write: %s", self.iface.iface_num(), self.sid, msg
             )
 
-        msg_type = msg.MESSAGE_WIRE_TYPE
-        pbuf_type = protobuf_type_for_wire(msg_type)
-        msg_size = protobuf_len(pbuf_type, msg)
+        msg_size = protobuf.encoded_length(msg)
 
         if msg_size <= len(self.buffer):
             # reuse preallocated
@@ -248,7 +238,7 @@ class Context:
             # message is too big, we need to allocate a new buffer
             buffer = bytearray(msg_size)
 
-        msg_size = protobuf_encode(buffer, pbuf_type, msg)
+        msg_size = protobuf.encode(buffer, msg)
 
         await codec_v1.write_message(
             self.iface,
@@ -291,7 +281,7 @@ async def _handle_single_message(
     if __debug__:
         try:
             msg_type = "MsgDef"
-            # msg_type = protobuf_type_for_wire(msg.type).__name__
+            # msg_type = protobuf.type_for_wire(msg.type).__name__
         except KeyError:
             msg_type = "%d - unknown message type" % msg.type
         log.debug(
@@ -318,7 +308,7 @@ async def _handle_single_message(
     try:
         # Find a protobuf.MessageType subclass that describes this
         # message.  Raises if the type is not found.
-        req_type = protobuf_type_for_wire(msg.type)
+        req_type = protobuf.type_for_wire(msg.type)
 
         # Try to decode the message according to schema from
         # `req_type`. Raises if the message is malformed.
