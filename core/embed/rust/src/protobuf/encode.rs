@@ -15,27 +15,27 @@ use crate::{
 
 use super::{
     defs::{FieldDef, FieldType, MsgDef},
-    obj::{MsgDefObj, MsgObj},
+    obj::{MsgObj},
     zigzag,
 };
 
 #[no_mangle]
-pub extern "C" fn protobuf_len(def: Obj, obj: Obj) -> Obj {
+pub extern "C" fn protobuf_len(obj: Obj) -> Obj {
     util::try_or_raise(|| {
-        let def = Gc::<MsgDefObj>::try_from(def)?;
+        let obj = Gc::<MsgObj>::try_from(obj)?;
 
         let stream = &mut CounterStream { len: 0 };
 
-        Encoder.encode_message(stream, def.msg(), obj)?;
+        Encoder.encode_message(stream, &obj.def(), &obj)?;
 
         Ok(stream.len.into())
     })
 }
 
 #[no_mangle]
-pub extern "C" fn protobuf_encode(buf: Obj, def: Obj, obj: Obj) -> Obj {
+pub extern "C" fn protobuf_encode(buf: Obj, obj: Obj) -> Obj {
     util::try_or_raise(|| {
-        let def = Gc::<MsgDefObj>::try_from(def)?;
+        let obj = Gc::<MsgObj>::try_from(obj)?;
 
         let buf = &mut BufferMut::try_from(buf)?;
         let stream = &mut BufferStream::new(unsafe {
@@ -44,7 +44,7 @@ pub extern "C" fn protobuf_encode(buf: Obj, def: Obj, obj: Obj) -> Obj {
             buf.as_mut()
         });
 
-        Encoder.encode_message(stream, def.msg(), obj)?;
+        Encoder.encode_message(stream, &obj.def(), &obj)?;
 
         Ok(stream.len().into())
     })
@@ -57,10 +57,8 @@ impl Encoder {
         &self,
         stream: &mut impl OutputStream,
         msg: &MsgDef,
-        obj: Obj,
+        obj: &MsgObj,
     ) -> Result<(), Error> {
-        let obj = Gc::<MsgObj>::try_from(obj)?;
-
         for field in msg.fields {
             let field_name = Qstr::from(field.name);
 
@@ -148,6 +146,7 @@ impl Encoder {
                 }
             }
             FieldType::Msg(msg_type) => {
+                let value = &Gc::<MsgObj>::try_from(value)?;
                 // Calculate the message size by encoding it through `CountingWriter`.
                 let counter = &mut CounterStream { len: 0 };
                 self.encode_message(counter, &msg_type, value)?;

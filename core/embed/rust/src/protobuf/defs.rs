@@ -146,7 +146,7 @@ fn find_msg_offset_by_wire(wire_id: u16) -> Option<u16> {
         .ok()
 }
 
-unsafe fn get_msg(msg_offset: u16) -> MsgDef {
+pub unsafe fn get_msg(msg_offset: u16) -> MsgDef {
     // #[repr(C, packed)]
     // struct MsgDef {
     //     fields_count: u8,

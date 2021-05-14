@@ -14,7 +14,7 @@ use crate::{
     util,
 };
 
-use super::{decode::Decoder, defs::MsgDef};
+use super::{decode::Decoder, defs::MsgDef, defs::get_msg};
 
 #[repr(C)]
 pub struct MsgObj {
@@ -40,6 +40,10 @@ impl MsgObj {
 
     pub fn map_mut(&mut self) -> &mut Map {
         &mut self.map
+    }
+
+    pub fn def(&self) -> MsgDef {
+        unsafe { get_msg(self.msg_offset) }
     }
 
     fn obj_type() -> &'static Type {
