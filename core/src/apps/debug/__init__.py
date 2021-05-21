@@ -8,13 +8,11 @@ if __debug__:
 
     from trezor import log, loop, wire
     from trezor.ui import display
+    from trezor.enums import MessageType
     from trezor.messages import (
         DebugLinkLayout,
-        DebugSwipeDirection,
-        MessageType,
         Success,
     )
-    from trezor import config, crypto, log, loop, utils
 
     from apps import workflow_handlers
 
@@ -62,7 +60,7 @@ if __debug__:
             layout_change_chan.publish(storage.current_content)
 
     async def dispatch_debuglink_decision(msg: DebugLinkDecision) -> None:
-        from trezor.messages import DebugSwipeDirection
+        from trezor.enums import DebugSwipeDirection
         from trezor.ui import Result
         from trezor.ui.components.tt import confirm, swipe
 

@@ -14,6 +14,7 @@ from .keychain import validate_path_against_script_type, with_keychain
 from .sign_tx.layout import format_coin_amount
 
 if False:
+    from trezor import wire
     from apps.common.coininfo import CoinInfo
     from apps.common.keychain import Keychain
 

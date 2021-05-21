@@ -1,5 +1,6 @@
 from trezor.crypto import bip32
-from trezor.messages import Address, InputScriptType
+from trezor.enums import InputScriptType
+from trezor.messages import Address
 from trezor.ui.layouts import show_address
 
 from apps.common.layout import address_n_to_str

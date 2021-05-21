@@ -9,6 +9,8 @@ from apps.common.paths import AlwaysMatchingSchema
 if False:
     from trezor.wire import Context
 
+    from trezor.messages import CipherKeyValue
+
 # This module implements the SLIP-0011 symmetric encryption of key-value pairs using a
 # deterministic hierarchy, see https://github.com/satoshilabs/slips/blob/master/slip-0011.md.
 

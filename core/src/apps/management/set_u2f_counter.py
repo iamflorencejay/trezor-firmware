@@ -1,6 +1,7 @@
 import storage.device
 from trezor import ui, wire
-from trezor.messages import ButtonRequestType, SetU2FCounter, Success
+from trezor.enums import ButtonRequestType
+from trezor.messages import SetU2FCounter, Success
 from trezor.ui.components.tt.text import Text
 
 from apps.common.confirm import require_confirm

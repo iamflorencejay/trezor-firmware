@@ -1,7 +1,7 @@
 import gc
 
 from trezor import utils, wire
-from trezor.enums.RequestType import TXFINISHED
+from trezor.enums import RequestType
 from trezor.messages import TxRequest
 
 from ..common import BITCOIN_NAMES
@@ -13,8 +13,6 @@ if not utils.BITCOIN_ONLY:
 
 if False:
     from typing import Protocol, Union
-
-    from protobuf import FieldCache
 
     from trezor.messages import (
         SignTx,
@@ -83,8 +81,8 @@ async def sign_tx(
         req = signer.send(res)
         if isinstance(req, tuple):
             request_class, req = req
-            # assert isinstance(req, TxRequest)
-            if req.request_type == TXFINISHED:
+            #assert isinstance(req, TxRequest)
+            if req.request_type == RequestType.TXFINISHED:
                 return req
             res = await ctx.call(req, request_class)
         elif isinstance(req, helpers.UiConfirm):

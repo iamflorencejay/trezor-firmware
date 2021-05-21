@@ -1,7 +1,7 @@
 from ubinascii import hexlify
 
+from trezor.enums import ButtonRequestType
 from trezor.messages import (
-    ButtonRequestType,
     StellarAccountMergeOp,
     StellarAllowTrustOp,
     StellarAssetType,

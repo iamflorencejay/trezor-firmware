@@ -1,13 +1,13 @@
 from trezor import wire
 from trezor.crypto.curve import secp256k1
 from trezor.crypto.hashlib import sha256
+from trezor.enums import MessageType
 from trezor.messages import (
     BinanceCancelMsg,
     BinanceOrderMsg,
     BinanceSignedTx,
     BinanceTransferMsg,
     BinanceTxRequest,
-    MessageType,
 )
 
 from apps.common import paths

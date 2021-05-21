@@ -1,13 +1,14 @@
 import storage.cache
 import storage.device
 from trezor import config, utils, wire, workflow
-from trezor.messages import MessageType, Success
+from trezor.enums import MessageType
+from trezor.messages import Success
 
 from . import workflow_handlers
 
 if False:
-    import protobuf
-    from typing import Iterable, NoReturn, Protocol
+    from trezor import protobuf
+    from typing import NoReturn
     from trezor.messages import (
         Features,
         Initialize,
@@ -26,7 +27,8 @@ def get_features() -> Features:
     import storage.sd_salt
 
     from trezor import sdcard
-    from trezor.messages import Capability, Features
+    from trezor.enums import Capability
+    from trezor.messages import Features
 
     from apps.common import mnemonic, safety_checks
 
@@ -125,9 +127,9 @@ async def handle_EndSession(ctx: wire.Context, msg: EndSession) -> Success:
 async def handle_Ping(ctx: wire.Context, msg: Ping) -> Success:
     if msg.button_protection:
         from trezor.ui.layouts import confirm_action
-        from trezor.enums.ButtonRequestType import ProtectCall
+        from trezor.enums import ButtonRequestType as B
 
-        await confirm_action(ctx, "ping", "Confirm", "ping", br_code=ProtectCall)
+        await confirm_action(ctx, "ping", "Confirm", "ping", br_code=B.ProtectCall)
     return Success(message=msg.message)
 
 

@@ -8,12 +8,12 @@ from apps.common import authorization
 from .common import BIP32_WALLET_DEPTH
 
 if False:
-    from typing import Iterable
     from trezor.messages import (
         GetOwnershipProof,
         SignTx,
         TxInput,
     )
+    from trezor.protobuf import MessageType
 
     from apps.common.coininfo import CoinInfo
 
@@ -54,7 +54,7 @@ class CoinJoinAuthorization:
         return True
 
 
-def from_cached_message(auth_msg: protobuf.MessageType) -> CoinJoinAuthorization:
+def from_cached_message(auth_msg: MessageType) -> CoinJoinAuthorization:
     if not AuthorizeCoinJoin.is_type_of(auth_msg):
         raise wire.ProcessError("Appropriate params was not found")
 

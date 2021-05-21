@@ -1,4 +1,4 @@
-from trezor.messages import CardanoCertificateType, CardanoPoolRelayType
+from trezor.enums import CardanoCertificateType, CardanoPoolRelayType
 
 from apps.common import cbor
 

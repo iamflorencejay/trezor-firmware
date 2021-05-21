@@ -1,7 +1,7 @@
 from micropython import const
 
 from trezor import wire
-from trezor.messages import OutputScriptType
+from trezor.enums import OutputScriptType
 
 from apps.common import safety_checks
 

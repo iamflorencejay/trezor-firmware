@@ -1,7 +1,6 @@
-import protobuf
 import storage.cache
-from trezor import messages, utils
-from trezor.messages import MessageType
+from trezor import protobuf
+from trezor.enums import MessageType
 
 if False:
     from typing import Iterable

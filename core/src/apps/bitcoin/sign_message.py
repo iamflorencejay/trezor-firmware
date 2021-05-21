@@ -1,6 +1,6 @@
 from trezor import wire
 from trezor.crypto.curve import secp256k1
-from trezor.enums.InputScriptType import SPENDADDRESS, SPENDP2SHWITNESS, SPENDWITNESS
+from trezor.enums import InputScriptType
 from trezor.messages import MessageSignature
 from trezor.ui.layouts import confirm_signverify
 
@@ -23,7 +23,7 @@ async def sign_message(
 ) -> MessageSignature:
     message = msg.message
     address_n = msg.address_n
-    script_type = msg.script_type or 0
+    script_type = msg.script_type or InputScriptType.SPENDADDRESS
 
     await validate_path(ctx, keychain, address_n)
     await confirm_signverify(ctx, coin.coin_shortcut, decode_message(message))
@@ -35,11 +35,11 @@ async def sign_message(
     digest = message_digest(coin, message)
     signature = secp256k1.sign(seckey, digest)
 
-    if script_type == SPENDADDRESS:
+    if script_type == InputScriptType.SPENDADDRESS:
         pass
-    elif script_type == SPENDP2SHWITNESS:
+    elif script_type == InputScriptType.SPENDP2SHWITNESS:
         signature = bytes([signature[0] + 4]) + signature[1:]
-    elif script_type == SPENDWITNESS:
+    elif script_type == InputScriptType.SPENDWITNESS:
         signature = bytes([signature[0] + 8]) + signature[1:]
     else:
         raise wire.ProcessError("Unsupported script type")

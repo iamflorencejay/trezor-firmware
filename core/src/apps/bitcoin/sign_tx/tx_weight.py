@@ -7,7 +7,7 @@
 
 from micropython import const
 
-from trezor.messages import InputScriptType
+from trezor.enums import InputScriptType
 
 if False:
     from trezor.messages import TxInput

@@ -1,10 +1,9 @@
 from trezor import log, wire
 from trezor.crypto import hashlib
 from trezor.crypto.curve import ed25519
+from trezor.enums import CardanoAddressType, CardanoCertificateType
 from trezor.messages import (
     CardanoAddressParametersType,
-    CardanoAddressType,
-    CardanoCertificateType,
     CardanoSignedTx,
     CardanoSignedTxChunk,
     CardanoSignedTxChunkAck,

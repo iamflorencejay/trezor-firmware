@@ -1,4 +1,4 @@
-from trezor.messages import CardanoAddressType
+from trezor.enums import CardanoAddressType
 
 from ..address import get_public_key_hash
 from ..seed import is_shelley_path

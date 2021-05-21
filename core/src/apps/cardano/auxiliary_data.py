@@ -1,6 +1,6 @@
 from trezor.crypto import hashlib
 from trezor.crypto.curve import ed25519
-from trezor.messages import CardanoAddressType
+from trezor.enums import CardanoAddressType
 
 from apps.common import cbor
 

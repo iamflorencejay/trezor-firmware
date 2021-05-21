@@ -1,6 +1,6 @@
 from trezor import wire
 from trezor.crypto import base58, hashlib
-from trezor.messages import CardanoAddressType
+from trezor.enums import CardanoAddressType
 
 from .byron_address import derive_byron_address, validate_byron_address
 from .helpers import INVALID_ADDRESS, NETWORK_MISMATCH, bech32, network_ids
@@ -12,7 +12,6 @@ if False:
     from trezor.messages import (
         CardanoBlockchainPointerType,
         CardanoAddressParametersType,
-        EnumTypeCardanoAddressType,
     )
     from . import seed
 
@@ -84,7 +83,7 @@ def get_address_bytes_unsafe(address: str) -> bytes:
     return address_bytes
 
 
-def _get_address_type(address: bytes) -> EnumTypeCardanoAddressType:
+def _get_address_type(address: bytes) -> CardanoAddressType:
     return address[0] >> 4  # type: ignore
 
 
@@ -104,7 +103,7 @@ def _validate_address_size(address_bytes: bytes) -> None:
 
 
 def _validate_address_bech32_hrp(
-    address_str: str, address_type: EnumTypeCardanoAddressType, network_id: int
+    address_str: str, address_type: CardanoAddressType, network_id: int
 ) -> None:
     valid_hrp = _get_bech32_hrp_for_address(address_type, network_id)
     bech32_hrp = bech32.get_hrp(address_str)
@@ -114,7 +113,7 @@ def _validate_address_bech32_hrp(
 
 
 def _get_bech32_hrp_for_address(
-    address_type: EnumTypeCardanoAddressType, network_id: int
+    address_type: CardanoAddressType, network_id: int
 ) -> str:
     if address_type == CardanoAddressType.BYRON:
         # Byron address uses base58 encoding
@@ -233,10 +232,8 @@ def _derive_shelley_address(
     return address
 
 
-def _create_address_header(
-    address_type: EnumTypeCardanoAddressType, network_id: int
-) -> bytes:
-    header = address_type << 4 | network_id
+def _create_address_header(address_type: CardanoAddressType, network_id: int) -> bytes:
+    header: int = address_type << 4 | network_id
     return header.to_bytes(1, "little")
 
 

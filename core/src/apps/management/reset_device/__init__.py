@@ -2,7 +2,8 @@ import storage
 import storage.device
 from trezor import config, wire
 from trezor.crypto import bip39, hashlib, random, slip39
-from trezor.messages import BackupType, EntropyAck, EntropyRequest, Success
+from trezor.enums import BackupType
+from trezor.messages import EntropyAck, EntropyRequest, Success
 from trezor.ui.layouts import confirm_backup, confirm_reset_device
 from trezor.ui.loader import LoadingAnimation
 

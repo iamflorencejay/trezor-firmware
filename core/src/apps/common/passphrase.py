@@ -2,7 +2,7 @@ from micropython import const
 
 import storage.device
 from trezor import wire, workflow
-from trezor.messages import ButtonRequestType
+from trezor.enums import ButtonRequestType
 
 from . import button_request
 

@@ -1,6 +1,6 @@
 from micropython import const
 
-from trezor.messages import MessageType
+from trezor.enums import MessageType
 
 TX_TYPE = bytearray("\x00\x00\x00\x02")
 

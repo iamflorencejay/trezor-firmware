@@ -2,7 +2,8 @@ import storage.device
 import storage.sd_salt
 from trezor import config, wire
 from trezor.crypto import random
-from trezor.messages import SdProtectOperationType, Success
+from trezor.enums import SdProtectOperationType
+from trezor.messages import Success
 from trezor.ui.layouts import confirm_action, show_success
 
 from apps.common.request_pin import (
