@@ -2,5 +2,6 @@
 # fmt: off
 # isort:skip_file
 
-ScrambledWords = 0
-Matrix = 1
+Plain = 0
+Matrix9 = 1
+Matrix6 = 2
