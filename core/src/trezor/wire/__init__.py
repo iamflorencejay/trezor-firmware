@@ -96,11 +96,11 @@ if False:
 
 
 def _wrap_protobuf_load(
-    reader: protobuf.Reader,
+    buffer: bytes,
     expected_type: type[LoadedMessageType],
 ) -> LoadedMessageType:
     try:
-        return protobuf.decode(reader.buffer, expected_type, experimental_enabled)
+        return protobuf.decode(buffer, expected_type, experimental_enabled)
     except Exception as e:
         if __debug__:
             log.exception(__name__, e)
@@ -155,7 +155,7 @@ class Context:
         del msg
         return await self.read_any(expected_wire_types)
 
-    def read_from_wire(self) -> codec_v1.Message:
+    def read_from_wire(self) -> Awaitable[codec_v1.Message]:
         return codec_v1.read_message(self.iface, self.buffer)
 
     async def read(self, expected_type: type[LoadedMessageType]) -> LoadedMessageType:
