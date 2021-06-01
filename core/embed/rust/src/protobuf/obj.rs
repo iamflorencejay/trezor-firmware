@@ -1,4 +1,4 @@
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryFrom;
 
 use crate::{
     error::Error,
@@ -14,7 +14,8 @@ use crate::{
     util,
 };
 
-use super::{decode::Decoder, defs::MsgDef, defs::get_msg};
+use super::decode::Decoder;
+use super::defs::{find_name_by_msg_offset, get_msg, MsgDef};
 
 #[repr(C)]
 pub struct MsgObj {
@@ -55,6 +56,48 @@ impl MsgObj {
     }
 }
 
+impl MsgObj {
+    fn getattr(&self, attr: Qstr) -> Result<Obj, Error> {
+        if let Ok(obj) = self.map.get(attr) {
+            // Message field was found, return its value.
+            return Ok(obj);
+        }
+
+        // Built-in attribute
+        match attr {
+            Qstr::MP_QSTR_MESSAGE_WIRE_TYPE => {
+                // Return the wire ID of this message def, or None if not set.
+                Ok(self.msg_wire_id.map_or(Obj::const_none(), |wire_id| wire_id.into()))
+            }
+            Qstr::MP_QSTR_MESSAGE_NAME => {
+                // Return the qstr name of this message def
+                Ok(Qstr::from_u16(find_name_by_msg_offset(self.msg_offset)?).into())
+            }
+            Qstr::MP_QSTR___dict__ => {
+                // Conversion to dict. Allocate a new dict object with a copy of our map
+                // and return it. This is a bit different from how uPy does it now, because
+                // we're returning a mutable dict.
+                Ok(Gc::new(Dict::with_map(self.map.clone())).into())
+            }
+            _ => { Err(Error::Missing) }
+        }
+    }
+
+    fn setattr(&mut self, attr: Qstr, value: Obj) -> Result<(), Error> {
+        if value == Obj::const_null() {
+            // this would be a delattr
+            return Err(Error::InvalidOperation);
+        }
+
+        if self.map.contains_key(attr) {
+            self.map.set(attr, value);
+            Ok(())
+        } else {
+            Err(Error::Missing)
+        }
+    }
+}
+
 impl Into<Obj> for Gc<MsgObj> {
     fn into(self) -> Obj {
         // SAFETY:
@@ -81,48 +124,23 @@ impl TryFrom<Obj> for Gc<MsgObj> {
 }
 
 unsafe extern "C" fn msg_obj_attr(self_in: Obj, attr: ffi::qstr, dest: *mut Obj) {
-    let mut this: Gc<MsgObj> = self_in.try_into().unwrap();
+    util::try_or_raise(|| {
+        let mut this = Gc::<MsgObj>::try_from(self_in)?;
+        let attr = Qstr::from_u16(attr as _);
 
-    let attr = Qstr::from_u16(attr as _);
-
-    unsafe {
-        if dest.read() == Obj::const_null() {
-            // Load attribute.
-            if let Ok(obj) = this.map.get(attr) {
-                // Message field was found, return its value.
-                dest.write(obj);
+        unsafe {
+            if dest.read() == Obj::const_null() {
+                // Load attribute
+                dest.write(this.getattr(attr)?);
             } else {
-                match attr {
-                    Qstr::MP_QSTR_MESSAGE_WIRE_TYPE => {
-                        // Return the wire ID of this message def, or None if not set.
-                        let obj = this
-                            .msg_wire_id
-                            .map_or_else(Obj::const_none, |wire_id| wire_id.into());
-                        dest.write(obj);
-                    }
-                    Qstr::MP_QSTR___dict__ => {
-                        // Conversion to dict. Allocate a new dict object with a copy of our map
-                        // and return it. This is a bit different from how uPy does it now, because
-                        // we're returning a mutable dict.
-                        let dict = Gc::new(Dict::with_map(this.map.clone()));
-                        dest.write(dict.into());
-                    }
-                    _ => {}
-                }
+                let value = dest.offset(1).read();
+                // Store attribute
+                Gc::as_mut(&mut this).setattr(attr, value)?;
+                dest.write(Obj::const_null());
             }
-        } else {
-            let value = dest.offset(1).read();
-            if value == Obj::const_null() {
-                // Delete attribute.
-                Gc::as_mut(&mut this).map.delete(attr);
-            } else {
-                // Store attribute.
-                Gc::as_mut(&mut this).map.set(attr, value);
-            }
-            // TODO: Fail if attr does not exist.
-            dest.write(Obj::const_null());
+            Ok(())
         }
-    }
+    })
 }
 
 #[repr(C)]
@@ -146,10 +164,7 @@ impl MsgDefObj {
     fn obj_type() -> &'static Type {
         static TYPE: Type = obj_type! {
             name: Qstr::MP_QSTR_MsgDef,
-            locals: &obj_dict!(obj_map! {
-                Qstr::MP_QSTR_wire => obj_fn_1!(msg_def_obj_wire).to_obj(),
-                Qstr::MP_QSTR_is_type_of => obj_fn_2!(msg_def_obj_is_type_of).to_obj(),
-            }),
+            attr_fn: msg_def_obj_attr,
             call_fn: msg_def_obj_call,
         };
         &TYPE
@@ -181,6 +196,44 @@ impl TryFrom<Obj> for Gc<MsgDefObj> {
     }
 }
 
+unsafe extern "C" fn msg_def_obj_attr(self_in: Obj, attr: ffi::qstr, dest: *mut Obj) {
+    util::try_or_raise(|| {
+        let this=  Gc::<MsgDefObj>::try_from(self_in)?;
+        let attr = Qstr::from_u16(attr as _);
+
+        if unsafe { dest.read() } != Obj::const_null() {
+            return Err(Error::InvalidOperation);
+        }
+
+        match attr {
+            Qstr::MP_QSTR_MESSAGE_NAME => {
+                // Return the qstr name of this message def
+                let name = Qstr::from_u16(find_name_by_msg_offset(this.def.offset)?);
+                unsafe { dest.write(name.into()); };
+            }
+            Qstr::MP_QSTR_MESSAGE_WIRE_TYPE => {
+                // Return the wire type of this message def
+                let wire_id_obj = this
+                    .def
+                    .wire_id
+                    .map_or_else(Obj::const_none, |wire_id| wire_id.into());
+                unsafe { dest.write(wire_id_obj); };
+            }
+            Qstr::MP_QSTR_is_type_of => {
+                // Return the is_type_of bound method
+                // dest[0] = function_obj
+                // dest[1] = self
+                unsafe {
+                    dest.write(MSG_DEF_OBJ_IS_TYPE_OF_OBJ.to_obj());
+                    dest.offset(1).write(self_in);
+                }
+            }
+            _ => { return Err(Error::Missing); }
+        }
+        Ok(())
+    });
+}
+
 unsafe extern "C" fn msg_def_obj_call(
     self_in: Obj,
     n_args: usize,
@@ -197,16 +250,6 @@ unsafe extern "C" fn msg_def_obj_call(
     })
 }
 
-unsafe extern "C" fn msg_def_obj_wire(self_in: Obj) -> Obj {
-    util::try_or_raise(|| {
-        let this = Gc::<MsgDefObj>::try_from(self_in)?;
-        Ok(this
-            .def
-            .wire_id
-            .map_or_else(Obj::const_none, |wire_id| wire_id.into()))
-    })
-}
-
 unsafe extern "C" fn msg_def_obj_is_type_of(self_in: Obj, obj: Obj) -> Obj {
     util::try_or_raise(|| {
         let this = Gc::<MsgDefObj>::try_from(self_in)?;
@@ -217,3 +260,5 @@ unsafe extern "C" fn msg_def_obj_is_type_of(self_in: Obj, obj: Obj) -> Obj {
         }
     })
 }
+
+static MSG_DEF_OBJ_IS_TYPE_OF_OBJ: ffi::mp_obj_fun_builtin_fixed_t = obj_fn_2!(msg_def_obj_is_type_of);

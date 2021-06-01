@@ -35,10 +35,9 @@ reads the message's header. When the message type is known the first handler is 
 
 """
 
-import protobuf
 from storage.cache import InvalidSessionError
-from trezor import log, loop, messages, protobuf, utils, workflow
 from trezor.messages import Failure, FailureType
+from trezor import log, loop, protobuf, utils, workflow
 from trezor.wire import codec_v1
 from trezor.wire.errors import ActionCancelled, DataError, Error
 
@@ -165,7 +164,7 @@ class Context:
                 "%s:%x expect: %s",
                 self.iface.iface_num(),
                 self.sid,
-                expected_type,
+                expected_type.MESSAGE_NAME,
             )
 
         # Load the full message into a buffer, parse out type and data payload
@@ -173,7 +172,7 @@ class Context:
 
         # If we got a message with unexpected type, raise the message via
         # `UnexpectedMessageError` and let the session handler deal with it.
-        if msg.type != expected_type.wire():
+        if msg.type != expected_type.MESSAGE_WIRE_TYPE:
             raise UnexpectedMessageError(msg)
 
         if __debug__:
@@ -182,7 +181,7 @@ class Context:
                 "%s:%x read: %s",
                 self.iface.iface_num(),
                 self.sid,
-                expected_type,
+                expected_type.MESSAGE_NAME,
             )
 
         workflow.idle_timer.touch()
@@ -215,7 +214,11 @@ class Context:
 
         if __debug__:
             log.debug(
-                __name__, "%s:%x read: %s", self.iface.iface_num(), self.sid, exptype
+                __name__,
+                "%s:%x read: %s",
+                self.iface.iface_num(),
+                self.sid,
+                exptype.MESSAGE_NAME,
             )
 
         workflow.idle_timer.touch()
@@ -226,8 +229,15 @@ class Context:
     async def write(self, msg: protobuf.MessageType) -> None:
         if __debug__:
             log.debug(
-                __name__, "%s:%x write: %s", self.iface.iface_num(), self.sid, msg
+                __name__,
+                "%s:%x write: %s",
+                self.iface.iface_num(),
+                self.sid,
+                msg.MESSAGE_NAME,
             )
+
+        # cannot write message without wire type
+        assert msg.MESSAGE_WIRE_TYPE is not None
 
         msg_size = protobuf.encoded_length(msg)
 
@@ -280,9 +290,8 @@ async def _handle_single_message(
     """
     if __debug__:
         try:
-            msg_type = "MsgDef"
-            # msg_type = protobuf.type_for_wire(msg.type).__name__
-        except KeyError:
+            msg_type = protobuf.type_for_wire(msg.type).MESSAGE_NAME
+        except Exception:
             msg_type = "%d - unknown message type" % msg.type
         log.debug(
             __name__,
@@ -403,6 +412,11 @@ async def handle_session(
                 next_msg = await _handle_single_message(
                     ctx, msg, use_workflow=not is_debug_session
                 )
+            except Exception as exc:
+                # Log and ignore. The session handler can only exit explicitly in the
+                # following finally block.
+                if __debug__:
+                    log.exception(__name__, exc)
             finally:
                 if not __debug__ or not is_debug_session:
                     # Unload modules imported by the workflow.  Should not raise.

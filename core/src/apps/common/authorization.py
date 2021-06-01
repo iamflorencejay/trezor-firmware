@@ -1,6 +1,7 @@
 import storage.cache
 from trezor import protobuf
 from trezor.enums import MessageType
+from trezor.utils import ensure
 
 if False:
     from typing import Iterable
@@ -17,6 +18,10 @@ def is_set() -> bool:
 def set(auth_message: protobuf.MessageType) -> None:
     buffer = protobuf.dump_message_buffer(auth_message)
 
+    # only wire-level messages can be stored as authorization
+    # (because only wire-level messages have wire_type, which we use as identifier)
+    ensure(auth_message.MESSAGE_WIRE_TYPE is not None)
+    assert auth_message.MESSAGE_WIRE_TYPE is not None  # so that mypy knows as well
     storage.cache.set(
         storage.cache.APP_COMMON_AUTHORIZATION_TYPE,
         auth_message.MESSAGE_WIRE_TYPE.to_bytes(2, "big"),
