@@ -1,5 +1,3 @@
-import gc
-
 from trezor import utils, wire
 from trezor.enums import RequestType
 from trezor.messages import TxRequest
@@ -81,7 +79,7 @@ async def sign_tx(
         req = signer.send(res)
         if isinstance(req, tuple):
             request_class, req = req
-            #assert isinstance(req, TxRequest)
+            assert TxRequest.is_type_of(req)
             if req.request_type == RequestType.TXFINISHED:
                 return req
             res = await ctx.call(req, request_class)
