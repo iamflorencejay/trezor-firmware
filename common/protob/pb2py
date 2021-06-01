@@ -335,21 +335,9 @@ class Descriptor:
 
         # collect extensions across all files
         # this is required for self._get_extension() to work
-        self.extensions = {}
-        for file in self.files:
-            for ext in file.extension:
-                # if an extension is already registered, it must have the same number
-                if self.extensions.get(ext.name, ext.number) != ext.number:
-                    raise ValueError(
-                        f"Extension {ext.name} registered with two different IDs"
-                    )
-
-                self.extensions[ext.name] = ext.number
-                # only one extension can use the same number
-                if len([k for k, v in self.extensions.items() if v == ext.number]) > 1:
-                    raise ValueError(
-                        f"Extension ID {ext.number} registered more than once"
-                    )
+        self.extensions = {
+            ext.name: ext.number for file in self.files for ext in file.extension
+        }
 
         # find message_type enum
         top_level_enums = itertools.chain.from_iterable(f.enum_type for f in self.files)
@@ -434,8 +422,6 @@ class Descriptor:
             for item in iter
             # exclude deprecated items unless specified
             if (self.include_deprecated or not item.options.deprecated)
-            # only include bitcoin_only items if bitcoin_only is set
-            and (not self.bitcoin_only or self._get_extension(item, "bitcoin_only"))
         ]
 
     def _get_extension(self, something, extension_name, default=None):

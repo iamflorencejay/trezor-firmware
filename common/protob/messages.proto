@@ -13,11 +13,13 @@ import "google/protobuf/descriptor.proto";
 
 /************************* WARNING ***********************
 Due to the way extensions are accessed in pb2py, there needs to be a globally unique
-name-ID mapping for extensions. That means that:
-(a) two different extensions, e.g. for EnumValueOptions and FieldOptions, MUST NOT have
-    the same ID
-(b) two extensions of the same name (e.g. bitcoin_only for EnumValueOptions and
-    MessageOptions), MUST have the same ID.
+name-ID mapping for extensions. That means that two different extensions, e.g. for
+EnumValueOptions and FieldOptions, MUST NOT have the same ID.
+
+Using the same ID indicates the same purpose (protobuf does not allow multiple
+extensions with the same name), such as EnumValueOptions.bitcoin_only and
+MessageOptions.include_in_bitcoin_only. pb2py can then find the extension under
+either name.
 
 The convention to achieve this is as follows:
  - extensions specific to a type have the same prefix:
@@ -52,6 +54,9 @@ extend google.protobuf.EnumOptions {
 extend google.protobuf.MessageOptions {
     optional bool unstable = 52001;   // indicate that a message definition might change at any time
     optional uint32 wire_type = 52002;   // override wire type specified in the MessageType enum
+
+    optional bool include_in_bitcoin_only = 60000;  // message is available on BITCOIN_ONLY build
+                                                    // intentionally identical to `bitcoin_only` from enum
 }
 
 /** Options for tagging field types */
