@@ -473,7 +473,7 @@ qstr_protobuf = env.Command(
         'genhdr/qstrdefs.protobuf.h',
     ],
     source=PROTO_SOURCES,
-    action='$PB2PY -o ${TARGET.dir} $SOURCES --qstr-file ${TARGET.file}',
+    action='$PB2PY $SOURCES --qstr-out ${TARGET} --bitcoin-only=%s' % BITCOIN_ONLY,
 )
 
 qstr_micropython = 'vendor/micropython/py/qstrdefs.h'
@@ -658,7 +658,7 @@ protobuf_blobs = env.Command(
         f'rust/{RUST_TARGET}/proto_wire.data',
     ],
     source=PROTO_SOURCES,
-    action='$PB2PY -o ${TARGET.dir} $SOURCES --blob --qstr-defs build/firmware/genhdr/qstrdefs.generated.h',
+    action='$PB2PY --bitcoin-only=%s --blob-outdir ${TARGET.dir} $SOURCES --qstr-defs build/firmware/genhdr/qstrdefs.generated.h' % BITCOIN_ONLY,
 )
 env.Depends(protobuf_blobs, qstr_generated)
 
