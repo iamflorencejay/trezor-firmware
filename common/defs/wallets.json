@@ -58,6 +58,11 @@
     "bitcoin:KOTO": {
         "Electrum-KOTO": "https://electrum.kotocoin.info"
     },
+    "bitcoin:LBC": {
+       "Electrum-LBC": "https://github.com/LBRYFoundation/LBRY-Vault"
+       "Coinomi": "http://coinomi.com"
+       "ViaWallet": "https://viawallet.com"
+   },
     "bitcoin:LTC": {
         "Electrum-LTC": "https://electrum-ltc.org",
         "Exodus": "https://www.exodus.io"

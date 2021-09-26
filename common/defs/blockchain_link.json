@@ -93,6 +93,12 @@
       "https://blockbook.kotocoin.info"
     ]
   },
+  "bitcoin:LBC": {
+    "type": "blockbook",
+    "url": [
+      "https://explorer.lbry.com"
+    ]
+  },
   "bitcoin:LTC": {
     "type": "blockbook",
     "url": [
