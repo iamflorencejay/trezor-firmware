@@ -22,6 +22,7 @@
 #include "bl_check.h"
 #include "buttons.h"
 #include "common.h"
+#include "compiler_traits.h"
 #include "config.h"
 #include "gettext.h"
 #include "layout.h"
